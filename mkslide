@@ -1,5 +1,11 @@
 #!/bin/zsh
 
+if [ ! $1 ]
+then
+  echo "need slide name."
+  exit
+fi
+
 NAME=$1
 DIR=$HOME/docs/slides/$NAME;
 URL=file:///$HOME/docs/$NAME/slides/start.html
