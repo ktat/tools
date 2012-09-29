@@ -1,0 +1,68 @@
+#!/bin/zsh
+
+NAME=$1
+DIR=$HOME/docs/slides/$NAME;
+URL=file:///$HOME/docs/$NAME/slides/start.html
+
+cd $HOME/docs/$NAME
+spork -make
+perl -p -i -e 's{continued...}{}g' slides/start.html
+NUM=`grep '<div class="slide">' slides/start.html | wc -l`
+
+mkdir -p $DIR
+
+# modified from http://d.hatena.ne.jp/Jxck/20111102/1320230249
+cat <<EOF > /tmp/render.js 
+var page = new WebPage(),
+    address, output, size, width, height, paperwidth, paperheight;
+
+address = phantom.args[0];
+output = phantom.args[1];
+width = phantom.args[2];
+height = phantom.args[3];
+paperwidth = phantom.args[4];
+paperheight = phantom.args[5];
+
+page.viewportSize = { width: width, height: height };
+page.paperSize = { width: paperwidth, height: paperheight, border: '0px' }
+
+page.open(address, function (status) {
+  console.log(status);
+  if (status !== 'success') {
+    console.log('Unable to load the address!');
+    phantom.exit();
+  } else {
+    capture_slide(0);
+  }
+});
+
+function capture_slide (i) {
+   i = i + 1;
+   if (i > $NUM) {
+     phantom.exit();
+   }
+   window.setTimeout(function () {
+     console.log('capture start');
+     page.render('$DIR/' + output + '.' + i + '.png');
+     console.log('capture end');
+     capture_slide(i);
+     page.sendEvent('click', 1,1);
+   }, 200);
+}
+EOF
+
+phantomjs /tmp/render.js $URL $NAME 1280 1024 29.7cm 21cm
+
+for i in {1..$NUM};
+do
+  sam2p $DIR/$NAME.$i.png  $DIR/$NAME.$i.pdf
+done;
+
+if [ -e $DIR/$NAME.slide.pdf ]
+then
+  rm $DIR/$NAME.slide.pdf
+fi
+
+pdftk $DIR/$NAME.{1..$NUM}.pdf cat output $DIR/$NAME.slide.pdf
+
+foxitreader $DIR/$NAME.slide.pdf
