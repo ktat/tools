@@ -57,7 +57,7 @@ function capture_slide (i) {
 }
 EOF
 
-phantomjs /tmp/render.js $URL $NAME 1280 1024 29.7cm 21cm
+LANG=en_US.UTF-8 phantomjs /tmp/render.js $URL $NAME 1280 1024 29.7cm 21cm
 
 for i in {1..$NUM};
 do
